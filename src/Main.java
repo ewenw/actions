@@ -1,15 +1,12 @@
 import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;
 
-import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.awt.AWTException;
 import java.awt.EventQueue;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,12 +18,9 @@ public class Main {
 	public static String test = "";
 	public static volatile int s = 0;
 	static Robot robot;
-	static int speed = 1;
-	static int repeats = 1;
-	Boolean loop = true;
-	static Boolean keyDown = false;
+	static int speed = 1, repeats = 1;
+	static Boolean loop = true, keyDown = false, record = false, play = false;;
 	static int key = 0, keynumb = 0;
-	static Boolean record = false, play = false;
 	static Timer timer;
 	static Thread p, t;
 	static Menu m;
@@ -34,6 +28,7 @@ public class Main {
 
 	public static void main(String[] args) throws InterruptedException {
 		EventQueue.invokeLater(new Runnable() {
+			@Override
 			public void run() {
 				try {
 					m = new Menu();
@@ -42,63 +37,60 @@ public class Main {
 				}
 			}
 		});
-
 		try {
 			robot = new Robot();
-		} catch (AWTException e) {
-			// TODO Auto-generated catch block
+			GlobalScreen.registerNativeHook();
+		}
+		catch(Exception e) {
 			e.printStackTrace();
 		}
-		try {
-			GlobalScreen.registerNativeHook();
-		} catch (NativeHookException ex) {
-			System.exit(1);
-		}
+		// add standard mouse, key, and JNativeHook listeners
 		MouseListener mouse = new MouseListener();
 		KeyListener key = new KeyListener();
 		GlobalScreen.getInstance().addNativeMouseListener(mouse);
 		GlobalScreen.getInstance().addNativeMouseMotionListener(mouse);
 		GlobalScreen.getInstance().addNativeMouseWheelListener(mouse);
 		GlobalScreen.getInstance().addNativeKeyListener(key);
-
 	}
 
 	public static void record() {
 		recordingName = String.valueOf(System.currentTimeMillis() + ".mcr");
 		Runnable r = new Runnable() {
+			@Override
 			public void run() {
 				PrintWriter writer;
 				try {
 					writer = new PrintWriter(new File(recordingName));
-
 					writer.print("");
 					writer.close();
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
 				}
-
+				
+			    // initialize a Timer with an interval delay of 1
 				s = 0;
 				timer = new Timer();
 				timer.scheduleAtFixedRate(new addCount(), 0, 1);
-
+				
+				// unregister JNativeHook if not recording
 				if (!record) {
 					GlobalScreen.unregisterNativeHook();
 					Thread.currentThread().interrupt();
 				}
 			}
 		};
-
 		t = new Thread(r);
 		t.start();
 	}
 
+	// thread to play through each command by specified number of times
 	public static void play() {
 		p = new Thread(new Runnable() {
+			@Override
 			public void run() {
-
 				String items = null;
 				try {
-					items = readFile(new File(m.list.getSelectedValue() + "")
+					items = readFile(new File(Menu.list.getSelectedValue() + "")
 							.getAbsolutePath());
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
@@ -110,27 +102,34 @@ public class Main {
 				}
 				final String[] commands = items.split(":");
 				for (int k = 0; k < repeats; k++) {
+					// reset counter if on infinite repeats
 					if (Menu.chckbxInfiniteLoop.isSelected())
-						k--;
+						k=0;
+					// mouse drag variable
 					boolean drag = false;
 					for (int i = 0; i < commands.length - 2; i += 4) {
 						final int l = i;
+						// parse each line of command and perform action using Java Robot
 						if (play == true) {
+							// key press action
 							if (commands[i].contains("KP")) {
 								robot.keyPress(Integer
 										.parseInt(commands[i + 1]));
 								robot.keyRelease(Integer
 										.parseInt(commands[i + 1]));
 							}
+							// mouse scroll wheel action
 							if (commands[i].contains("MW")) {
 								robot.mouseWheel(Integer
 										.parseInt(commands[i + 1]));
 							}
+							// mouse movement
 							if (commands[i].contains("MM")) {
 								robot.mouseMove(
 										Integer.parseInt(commands[i + 1]),
 										Integer.parseInt(commands[i + 2]));
 							}
+							// mouse down action by specific keys
 							if (commands[i].contains("MD")) {
 								if (commands[i].contains("1")) {
 									robot.mousePress(InputEvent.BUTTON1_MASK);
@@ -143,6 +142,7 @@ public class Main {
 									robot.mouseRelease(InputEvent.BUTTON2_MASK);
 								}
 							}
+							// mouse dragging action
 							if (commands[i].contains("Drag")) {
 								int j = i;
 								if (drag == false) {
@@ -181,6 +181,7 @@ public class Main {
 									- Long.parseLong(commands[i + 3]));
 					}
 				}
+				// update menu after playing
 				Menu.refresh();
 				Main.play = false;
 				Menu.stop.setEnabled(false);
@@ -196,6 +197,7 @@ public class Main {
 
 	}
 
+	// read file content into String
 	static String readFile(String fileName) throws IOException {
 		BufferedReader br = new BufferedReader(new FileReader(fileName));
 		try {
@@ -212,13 +214,16 @@ public class Main {
 			br.close();
 		}
 	}
-
+	
+	// set Java robot timeout
 	public static void timeOut(long m) {
 		robot.delay((int) (m / speed));
 	}
 }
 
+// counter with interval timing
 class addCount extends TimerTask {
+	@Override
 	public void run() {
 		Main.s++;
 	}

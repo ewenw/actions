@@ -12,11 +12,13 @@ public class ListFiles {
 	public static String[] getFiles() {
 		File dir = new File(System.getProperty("user.dir"));
 		File[] files = dir.listFiles(new FilenameFilter() {
+			@Override
 			public boolean accept(File dir, String name) {
 				return name.toLowerCase().endsWith(".mcr");
 			}
 		});
 		Arrays.sort(files, new Comparator<Object>() {
+			@Override
 			public int compare(Object o1, Object o2) {
 				Path p1 = Paths.get(((File) o1).getAbsolutePath());
 				BasicFileAttributes attr = null;

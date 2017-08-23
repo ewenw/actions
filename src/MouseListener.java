@@ -10,24 +10,21 @@ import org.jnativehook.mouse.NativeMouseWheelListener;
 public class MouseListener implements NativeMouseInputListener,
 		NativeMouseWheelListener {
 
-	public static String filename = "";
-
-	public MouseListener() {
-
-	}
-
+	static FileWriter fw;
+	static BufferedWriter bw;
+	@Override
 	public void nativeMousePressed(NativeMouseEvent e) {
-
 	}
-
+	
+	@Override
 	public void nativeMouseReleased(NativeMouseEvent e) {
-
 		if (Main.record) {
 			write(e.getButton() + "MD:" + e.getX() + ":" + e.getY()
 					+ e.getButton() + ":" + Main.s + ":");
 		}
 	}
 
+	@Override
 	public void nativeMouseDragged(NativeMouseEvent e) {
 		if (Main.record) {
 			write(e.getButton() + "Drag:" + e.getX() + ":" + e.getY() + ":"
@@ -35,8 +32,8 @@ public class MouseListener implements NativeMouseInputListener,
 		}
 	}
 
+	@Override
 	public void nativeMouseMoved(NativeMouseEvent e) {
-
 		if (Main.record) {
 			write("MM:" + e.getX() + ":" + e.getY() + ":" + Main.s + ":");
 		}
@@ -48,20 +45,18 @@ public class MouseListener implements NativeMouseInputListener,
 	}
 
 	public static void write(String s) {
-		FileWriter fw;
 		try {
 			fw = new FileWriter(new File(Main.recordingName).getAbsoluteFile(),
-					true);
-
-			BufferedWriter bw = new BufferedWriter(fw);
+						true);
+			bw = new BufferedWriter(fw);
 			bw.append(s);
 			bw.newLine();
 			bw.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+	
 
 	@Override
 	public void nativeMouseWheelMoved(NativeMouseWheelEvent e) {

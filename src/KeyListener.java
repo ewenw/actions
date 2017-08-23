@@ -4,6 +4,7 @@ import org.jnativehook.keyboard.NativeKeyListener;
 public class KeyListener implements NativeKeyListener {
 	int pressed = 0;
 
+	@Override
 	public void nativeKeyPressed(NativeKeyEvent e) {
 		pressed = e.getKeyCode();
 	}
@@ -12,7 +13,7 @@ public class KeyListener implements NativeKeyListener {
 	public void nativeKeyTyped(NativeKeyEvent e) {
 		if (pressed == NativeKeyEvent.VK_ESCAPE) {
 			Menu.stopPressed();
-		} else if (pressed == (int)';') {
+		} else if (pressed == ';') {
 			if (Main.record == false) {
 				System.out.println("Now Recording");
 				Menu.record.setEnabled(false);

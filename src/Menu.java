@@ -59,7 +59,6 @@ public class Menu extends JFrame implements ActionListener {
 	static JList list;
 	public static int index = 0;
 	public static JCheckBox chckbxInfiniteLoop;
-	public static Point point = new Point();
 
 	// define button images
 	BufferedImage img = null;
@@ -99,19 +98,7 @@ public class Menu extends JFrame implements ActionListener {
 		setContentPane(contentPane);
 		loadImages();
 		
-		this.addMouseListener(new MouseAdapter() {
-			public void mousePressed(MouseEvent e) {
-				point.x = e.getX();
-				point.y = e.getY();
-			}
-		});
-		this.addMouseMotionListener(new MouseAdapter() {
-			public void mouseDragged(MouseEvent me) {
-				Point p = getLocation();
-				setLocation(p.x + me.getX() - point.x, p.y + me.getY()
-						- point.y);
-			}
-		});
+		new WindowDragListener(this);
 		// initialize all panels
 		setupPanels();
 		// initialize all buttons
@@ -119,37 +106,12 @@ public class Menu extends JFrame implements ActionListener {
 		
 		// add list selection for recorded files
 		list.addListSelectionListener(new ListSelectionListener() {
+			@Override
 			public void valueChanged(ListSelectionEvent arg0) {
 				if (list.getSelectedValue() != null) {
-
-					String text = null;
-					try {
-						text = Main.readFile(new File(list.getSelectedValue()
-								+ "").getAbsolutePath());
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					int startIndexSpeed = text.indexOf("(");
-					int endIndexSpeed = text.indexOf(")");
-					String f1 = "1";
-					try{
-						f1 = text.substring(startIndexSpeed + 1,
-							endIndexSpeed);
-					}
-					catch(Exception e)
-					{
-						e.printStackTrace();
-					}
-					Main.speed = Integer.parseInt(f1);
-					slider.setValue(Main.speed);
-					int startIndexRepeats = text.indexOf("<");
-					try {
-						String f2 = text.substring(startIndexRepeats + 1,
-								text.length() - 1);
-						Main.repeats = Integer.parseInt(f2);
-					} catch (Exception e) {
-
-					}
+					int[] preferences = loadPreferences();
+					Main.speed = preferences[0];
+					Main.repeats = preferences[1];
 					String value = String.valueOf(list.getSelectedValue());
 					nameField.setText(value.substring(0, value.length() - 4));
 					index = list.getSelectedIndex();
@@ -159,7 +121,7 @@ public class Menu extends JFrame implements ActionListener {
 		});
 		edit.addActionListener(this);
 		delete.addActionListener(this);
-		// listener for speed slider
+		// listen for speed slider changes
 		slider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent ce) {
@@ -194,7 +156,42 @@ public class Menu extends JFrame implements ActionListener {
 		// refresh GUI elements
 		refresh();
 	}
-
+	
+	private int[] loadPreferences() {
+		String text = null;
+		try {
+			text = Main.readFile(new File(list.getSelectedValue()
+					+ "").getAbsolutePath());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		// parse out saved speed data
+		int startIndexSpeed = text.indexOf("(");
+		int endIndexSpeed = text.indexOf(")");
+		int startIndexRepeats = text.indexOf("<");
+		String pref1 = "1";
+		String pref2 = "1";
+		int spd = 0;
+		int rpt = 0;
+		try {
+			pref1 = text.substring(startIndexSpeed + 1,
+				endIndexSpeed);
+			pref2 = text.substring(startIndexRepeats + 1,
+					text.length() - 1);
+			spd = Integer.parseInt(pref1);
+			rpt = Integer.parseInt(pref2);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+		slider.setValue(Main.speed);
+		
+		return new int[] {spd, rpt};
+	}
+	
+	// load up button images
 	private void loadImages() {
 		try {
 			exi = ImageIO.read(new File("resources/exit.png"));
@@ -268,7 +265,8 @@ public class Menu extends JFrame implements ActionListener {
 		edit.setToolTipText("Save Settings");
 		panel_1.add(edit);
 	}
-
+	
+	// set up panels, labels and scroll panels
 	private void setupPanels() {
 		contentPane.setLayout(null);
 		desktopPane = new JDesktopPane();
@@ -389,7 +387,9 @@ public class Menu extends JFrame implements ActionListener {
 		}
 
 	}
-
+	
+	// Swing button action detection
+	@Override
 	public void actionPerformed(ActionEvent e) {
 		JButton b = (JButton) e.getSource();
 		if (b == record) {
@@ -454,7 +454,6 @@ public class Menu extends JFrame implements ActionListener {
 			index = 0;
 			refresh();
 		}
-
 		Main.record = false;
 		Main.play = false;
 		Main.s = 0;
@@ -478,10 +477,10 @@ public class Menu extends JFrame implements ActionListener {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		int starti = text.indexOf("(");
+		int pref_index = text.indexOf("(");
 		int startf = text.indexOf(")");
 		String speed = "";
-		String s1 = text.substring(0, starti + 1);
+		String s1 = text.substring(0, pref_index + 1);
 		String s2 = text.substring(startf, text.length());
 
 		speed = String.valueOf(slider.getValue());
